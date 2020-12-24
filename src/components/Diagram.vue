@@ -250,6 +250,7 @@ export default {
 
     close_modal:function() {
       this.isModalVisible = false;
+      this.can_clear_interval = true;
       //clearInterval(this.interval)
     },
 
@@ -270,14 +271,25 @@ export default {
         }
         this.result.ip = info.ip;
         this.result.can_change = true;
-        this.router_form.ip = '';
-        this.router_form.password = '';
+        
       }
-      this.can_clear_interval = true;
+      var result = {
+        router: router,
+        ip: info.ip,
+        info: is_correct ? 'SUCCESS' : 'FAIL',
+      }
+      // console.log(info)
+      // console.log(result);
+      this.$emit("getResultEvent", result);
+      // this.can_clear_interval = true;
       this.close_modal();
+
+      
+      this.router_form.ip = '';
+      this.router_form.password = '';
     },
     check_router(router, info) {
-      return true;
+      return false;
     }
   }
 
