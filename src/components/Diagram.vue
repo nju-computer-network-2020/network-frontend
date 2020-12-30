@@ -4,15 +4,15 @@
 
     </div>
     <div>
-      <modal :show="isModalVisible" @close="close_modal">
+      <modal :show="isModalVisible" @close="reset_form('router_form')">
       <div slot="header" style="margin-top: 5px">配置{{modal_title}}</div>
       <div slot="body" style="margin-top: 5px">
         <div>
-          <el-form ref="router_form" :model="router_form" style="width: 400px" label-width="50px">
-            <el-form-item label="IP">
+          <el-form ref="router_form" :model="router_form" :rules="rules" style="width: 400px" label-width="50px">
+            <el-form-item label="IP" prop="ip">
               <el-input v-model="router_form.ip"></el-input>
             </el-form-item>
-            <el-form-item label="密码">
+            <el-form-item label="密码" prop="password">
               <el-input v-model="router_form.password" show-password></el-input>
             </el-form-item>
           </el-form>
@@ -20,8 +20,8 @@
         
       </div>
       <div slot="footer" style="margin-top: 5px">
-        <el-button type="info" plain @click="close_modal">取消</el-button>
-        <el-button type="primary" plain @click="set_router_ip(modal_title, router_form)">确定</el-button>
+        <el-button type="info" plain @click="reset_form('router_form')">取消</el-button>
+        <el-button type="primary" plain @click="set_router_ip('router_form',modal_title, router_form)" v-loading.fullscreen.lock="fullscreenLoading">确定</el-button>
       </div>
     </modal>
     </div>
@@ -44,7 +44,27 @@ export default {
     this.init();
   },
   data () {
+
+    var validate_ip = (rule, value, callback) => {
+      const reg = /^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
+      if(!value) {
+        return callback(new Error('请输入IP'));
+      }else if(!reg.test(value)){
+        return callback(new Error('IP格式不正确'));
+      } else {
+        callback();
+      }
+    };
+
+    var validate_password = (rule, value, callback) => {
+      if(!value) {
+        return callback(new Error('请输入密码'));
+      }else {
+        callback();
+      }
+    }
     return {
+      fullscreenLoading: false,
       interval: null,
       diagram: null,
       model: { 'class': 'go.GraphLinksModel',
@@ -59,6 +79,16 @@ export default {
       router_form: {
         ip:'',
         password:''
+      },
+      rules: {
+        ip: [
+          {validator: validate_ip, trigger: 'blur'}
+          // { required: true, message: '请输入IP', trigger: 'blur' },
+        ],
+        password: [
+          {validator: validate_password, trigger: 'blur'}
+           // { required: true, message: '请输入密码', trigger: 'blur' },
+        ]
       },
       RTA: {
         ip: '',
@@ -78,7 +108,13 @@ export default {
         index: -1,
         ip: '',
         mask: '',
-      }
+      },
+      can_config: {
+        RTA: false,
+        RTB: false,
+        RTC: false
+      },
+      is_correct: false,
     }
   },
 
@@ -123,7 +159,6 @@ export default {
                     self.result.can_change = false;
                   }
                   self.can_clear_interval = false;
-                  console.log(self.interval);
                   clearInterval(self.interval)
                 }
                 console.log("test")
@@ -248,48 +283,118 @@ export default {
       }
     },
 
+
+
     close_modal:function() {
       this.isModalVisible = false;
       this.can_clear_interval = true;
       //clearInterval(this.interval)
     },
 
-    set_router_ip(router, info) {
-      var is_correct = this.check_router(router, info);
-      if(is_correct) {
-        if(router === "RTA") {
-          this.RTA = info;
-          this.result.index = 3;
-        }
-        if(router === "RTB") {
-          this.RTB = info;
-          this.result.index = 4;
-        }
-        if(router === "RTC") {
-          this.RTC = info;
-          this.result.index = 5;
-        }
-        this.result.ip = info.ip;
-        this.result.can_change = true;
-        
-      }
-      var result = {
-        router: router,
-        ip: info.ip,
-        info: is_correct ? 'SUCCESS' : 'FAIL',
-      }
-      // console.log(info)
-      // console.log(result);
-      this.$emit("getResultEvent", result);
-      // this.can_clear_interval = true;
+    reset_form(router_form) {
+      console.log("reset");
       this.close_modal();
+      this.$refs[router_form].resetFields();
+      
+    },
+
+    set_router_ip(form_name, router, router_form) {
+
+      console.log("set_router_ip");
+      this.$refs[form_name].validate( async (valid) => {
+        console.log("valid:" + valid)
+        if(valid) {
+          this.fullscreenLoading = true;
+          await this.check_router(router, router_form);
+          // this.check_router(router, router_form);
+          if(this.is_correct) {
+            if(router === "RTA") {
+              this.RTA = router_form;
+              this.can_config.RTA = true;
+              this.result.index = 3;
+            }
+            if(router === "RTB") {
+              this.RTB = router_form;
+              this.can_config.RTB = true;
+              this.result.index = 4;
+            }
+            if(router === "RTC") {
+              this.RTC = router_form;
+              this.can_config.RTC = true;
+              this.result.index = 5;
+            }
+            this.result.ip = router_form.ip;
+            this.result.can_change = true;
+        
+          }else {
+            if(router === "RTA") {
+              this.can_config.RTA = false;
+            }
+            if(router === "RTB") {
+              this.can_config.RTB = false;
+            }
+            if(router === "RTC") {
+              this.can_config.RTC = false;
+            }
+          }
+
+          var result = {
+            router: router,
+            ip: router_form.ip,
+            info: this.is_correct ? 'SUCCESS' : 'FAIL',
+          }
+          this.$emit("getResultEvent", result);
+
+          this.reset_form(form_name);
+        }// end if valid
+      });
+      
+      console.log("end")
+
+      // this.$emit('getConfigInfo', this.can_config);
+      
+      // this.close_modal();
 
       
-      this.router_form.ip = '';
-      this.router_form.password = '';
+      // this.router_form.ip = '';
+      // this.router_form.password = '';
     },
-    check_router(router, info) {
-      return false;
+
+    async check_router(router, info) {
+      var self = this;
+      await this.$axios.get('/connect', {
+        params: {
+          hostname: router,
+          ipAdd: info.ip,
+          password: info.password
+        }
+      }).then(
+        function(response) {
+          console.log(response);
+          self.is_correct = true;
+          //return true;
+
+        }
+      ).catch(function (error) {
+        console.log(error);
+        self.is_correct = false;
+        // return false;
+      })
+
+      this.fullscreenLoading = false;
+    },
+
+    config_all() {
+      if(this.can_config.RTA && this.can_config.RTB && this.can_config.RTC) {
+        this.$axios.post('').then({
+
+        }).catch(function(error) {
+          console.log(error);
+        })
+      }else {
+
+      }
+      
     }
   }
 

@@ -15,6 +15,9 @@ Vue.config.productionTip = false;
 Vue.prototype.$axios= axios;
 Vue.prototype.$echarts = echarts;
 
+// // axios.defaults.withCredentials = true;
+// Vue.prototype.$axios.defaults.withCredentials = true;
+
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

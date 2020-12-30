@@ -9,14 +9,16 @@ import * as types from '../vuex/types'
 
 // axios默认配置
 axios.defaults.timeout = 50000;   // 超时时间
-//axios.defaults.baseURL = 'http://193.112.82.110:8000/';  // 默认地址
-axios.defaults.baseURL = 'http://localhost:8000';  // 默认地址
+axios.defaults.baseURL = 'http://172.19.188.100:5000/';  // 默认地址
+// axios.defaults.baseURL = 'http://localhost:8000';  // 默认地址
 
 //整理数据
 axios.defaults.transformRequest = function (data) {
   data = JSON.stringify(data);
   return data;
 };
+
+axios.defaults.withCredentials = true;
 
 // 路由请求拦截
 // http request 拦截器
