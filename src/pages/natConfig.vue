@@ -8,7 +8,7 @@
         </div>
         <div style="" align="center">
           <el-button @click="config_all" v-loading.fullscreen.lock="fullscreenLoading">配置</el-button>
-          <el-button @click="show_ping" v-loading.fullscreen.lock="fullscreenLoading">测试</el-button>
+          <el-button @click="test_nat" v-loading.fullscreen.lock="fullscreenLoading">测试</el-button>
         </div>
       </div>
       <div>
@@ -37,8 +37,10 @@ export default {
       buffer_info: {
         time: '',
         data: '',
-        type: 'string'
+        type: 'string',
+        key: 0,
       },
+      count: 0,
       can_config: {
         RTA: true,
         RTB: true,
@@ -92,11 +94,17 @@ export default {
 
     async test_nat() {
       this.fullscreenLoading = true;
+      var self = this;
       await this.$axios.get('/testResult').then(
-          function (response) {
+          async function (response) {
             console.log(response.data);
             var data = response.data;
-            console.log("测试")   
+            await self.show_nat(data[0].message);
+            console.log("测试0")   
+            await self.show_ping(data[1].message);
+            console.log("测试1")   
+            await self.show_ping(data[2].message);
+            console.log("测试2")   
           }
         ).catch(function(error) {
           console.log(error);
@@ -104,10 +112,12 @@ export default {
       this.fullscreenLoading = false;
     },
 
-    show_nat(data) {
+    show_nat(info1) {
 
-      data = ": \r\nRTB#show ip nat translations\r\nPro Inside global      Inside local       Outside local      Outside global\r\n--- 192.168.1.34       10.0.0.2           ---                ---\r\n--- 192.168.1.35       10.0.0.11          ---            ";
-      var list1 = data.split('\r\n');
+      console.log(typeof info1);
+      console.log(info1);
+      // data = ": \r\nRTB#show ip nat translations\r\nPro Inside global      Inside local       Outside local      Outside global\r\n--- 192.168.1.34       10.0.0.2           ---                ---\r\n--- 192.168.1.35       10.0.0.11          ---            ";
+      var list1 = info1.split('\r\n');
       console.log(list1);
 
       let list2 = [];
@@ -140,10 +150,10 @@ export default {
 
     },
 
-    show_ping() {
-      let data = "ping 192.168.3.2\r\n\r\n正在 Ping 192.168.3.2 具有 32 字节的数据:\r\n来自 192.168.3.2 的回复: 字节=32 时间=9ms TTL=126\r\n来自 192.168.3.2 的回复: 字节=32 时间=9ms TTL=126\r\n来自 192.168.3.2 的回复: 字节=32 时间=9ms TTL=126\r\n来自 192.168.3.2 的回复: 字节=32 时间=9ms TTL=126\r\n\r\n192.168.3.2 的 Ping 统计信息:\r\n    数据包: 已发送 = 4，已接收 = 4，丢失 = 0 (0% 丢失)，\r\n往返行程";
-      let list = data.split("\r\n");
-      console.log(list);
+    show_ping(info2) {
+      // data = "ping 192.168.3.2\r\n\r\n正在 Ping 192.168.3.2 具有 32 字节的数据:\r\n来自 192.168.3.2 的回复: 字节=32 时间=9ms TTL=126\r\n来自 192.168.3.2 的回复: 字节=32 时间=9ms TTL=126\r\n来自 192.168.3.2 的回复: 字节=32 时间=9ms TTL=126\r\n来自 192.168.3.2 的回复: 字节=32 时间=9ms TTL=126\r\n\r\n192.168.3.2 的 Ping 统计信息:\r\n    数据包: 已发送 = 4，已接收 = 4，丢失 = 0 (0% 丢失)，\r\n往返行程";
+      let list = info2.split("\r\n");
+      // console.log(list);
       let list2 = [];
       for(let i = 0; i < list.length; i++) {
         if(list[i].length !== 0) {
@@ -160,10 +170,12 @@ export default {
       let info = {
         time: time,
         data: data,
-        type: type
+        type: type,
+        key: this.count,
       }
-      console.log(info);
+      // console.log(info);
       this.buffer_info = info;
+      this.count += 1;
     }
   }
   

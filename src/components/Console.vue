@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="console" style="padding-left: 20px" id="scroll_pane">
-      <div v-for="info in info_list" :key="info.time">
+      <div v-for="(info, index) in info_list" :key="index">
         <ConsoleItem :info='info'></ConsoleItem>
       </div>
     </div>
@@ -47,7 +47,7 @@ export default {
 <style scoped>
   .console {
     margin-top: 20px;
-    width: 560px;
+    width: 550px;
     height: 450px;
     border: 1px solid #c1c1c1;
     border-radius: 10px;

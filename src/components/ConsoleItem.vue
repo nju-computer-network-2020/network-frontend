@@ -35,7 +35,7 @@
       </el-table>
     </div>
     <div v-else>
-      <p v-for="line in info.data" :key="line">
+      <p v-for="(line, index) in info.data" :key="index">
         {{line}}
       </p>
     </div>
